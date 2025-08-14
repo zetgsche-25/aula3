@@ -1,0 +1,285 @@
+import React, { useMemo, useState } from "react";
+import { Download, Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
+
+// 5W2H starter data
+const initialRows = [
+  {
+    eixo: "What (O que)",
+    descricao:
+      "Desenvolver um aplicativo do Lixo Zero que permita moradores solicitarem coleta seletiva e exiba, para coletores, um mapa com ícones das casas participantes para otimizar rotas.",
+    responsavel: "Gestor do Projeto / TI",
+    prazo: "Mês 1-4",
+    custo: "R$ 20k–35k",
+    status: "Em planejamento",
+  },
+  {
+    eixo: "Why (Por quê)",
+    descricao:
+      "Aumentar eficiência da coleta, reduzir custos/tempo de deslocamento, elevar taxa de reciclagem e engajar a população em sustentabilidade.",
+    responsavel: "PMO / Educação Ambiental",
+    prazo: "Contínuo",
+    custo: "-",
+    status: "Definido",
+  },
+  {
+    eixo: "Where (Onde)",
+    descricao:
+      "Piloto em Maricá (bairros prioritários) com expansão; app Android + iOS.",
+    responsavel: "Prefeitura / TI",
+    prazo: "Piloto Mês 5, expansão Mês 6+",
+    custo: "Incluso no projeto",
+    status: "Planejado",
+  },
+  {
+    eixo: "When (Quando)",
+    descricao:
+      "M1: Planejamento e design | M2–M4: Desenvolvimento e testes | M5: Piloto | M6+: Expansão.",
+    responsavel: "PMO",
+    prazo: "M1–M6+",
+    custo: "R$ 8k–12k/ano (manutenção)",
+    status: "Cronograma base",
+  },
+  {
+    eixo: "Who (Quem)",
+    descricao:
+      "Gestor do projeto, desenvolvedores, equipe Lixo Zero, coletores, moradores aderentes.",
+    responsavel: "RH / Parcerias",
+    prazo: "M1",
+    custo: "R$ 5k (divulgação)",
+    status: "Mapeado",
+  },
+  {
+    eixo: "How (Como)",
+    descricao:
+      "App com duas interfaces: morador (Solicitar Coleta, notificações, dicas) e coletor (mapa, rotas inteligentes, histórico). BD seguro e push.",
+    responsavel: "TI / UX",
+    prazo: "M2–M4",
+    custo: "Incluso no desenvolvimento",
+    status: "Detalhando",
+  },
+  {
+    eixo: "How Much (Quanto)",
+    descricao:
+      "Total inicial estimado: R$ 33k–52k (dev, marketing, setup). Manutenção anual: R$ 8k–12k.",
+    responsavel: "Financeiro",
+    prazo: "M1 orçamento",
+    custo: "R$ 33k–52k",
+    status: "Estimado",
+  },
+];
+
+function classNames(...cls) {
+  return cls.filter(Boolean).join(" ");
+}
+
+export default function LixoZero5W2HGrid() {
+  const [rows, setRows] = useState(initialRows);
+  const [filter, setFilter] = useState("");
+  const [sortKey, setSortKey] = useState("eixo");
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const filtered = useMemo(() => {
+    const f = filter.toLowerCase();
+    const r = rows.filter(
+      (r) =>
+        r.eixo.toLowerCase().includes(f) ||
+        r.descricao.toLowerCase().includes(f) ||
+        r.responsavel.toLowerCase().includes(f) ||
+        r.prazo.toLowerCase().includes(f) ||
+        r.custo.toLowerCase().includes(f) ||
+        r.status.toLowerCase().includes(f)
+    );
+    const sorted = [...r].sort((a, b) => {
+      const va = (a[sortKey] || "").toString().toLowerCase();
+      const vb = (b[sortKey] || "").toString().toLowerCase();
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [rows, filter, sortKey, sortAsc]);
+
+  const updateCell = (i, key, value) => {
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  };
+
+  const addRow = () => {
+    setRows((prev) => [
+      ...prev,
+      {
+        eixo: "",
+        descricao: "",
+        responsavel: "",
+        prazo: "",
+        custo: "",
+        status: "",
+      },
+    ]);
+  };
+
+  const deleteRow = (i) => {
+    setRows((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const downloadCSV = () => {
+    const header = ["5W2H", "Descrição", "Responsável", "Prazo", "Custo", "Status"];
+    const lines = rows.map((r) =>
+      [r.eixo, r.descricao, r.responsavel, r.prazo, r.custo, r.status]
+        .map((v) => `"${String(v ?? "").replaceAll('"', '""')}"`)
+        .join(",")
+    );
+    const csv = [header.join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "lixo-zero-5w2h.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const HeaderCell = ({ label, k }) => (
+    <th
+      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer select-none"
+      onClick={() => {
+        if (sortKey === k) setSortAsc(!sortAsc);
+        else {
+          setSortKey(k);
+          setSortAsc(true);
+        }
+      }}
+      title="Clique para ordenar"
+    >
+      <div className="flex items-center gap-2">
+        <span>{label}</span>
+        {sortKey === k && (
+          <span className="text-xs opacity-70">{sortAsc ? "▲" : "▼"}</span>
+        )}
+      </div>
+    </th>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-neutral-50 p-6">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Planilha 5W2H – Projeto Lixo Zero</h1>
+            <p className="text-sm text-neutral-600">
+              Edite como uma planilha: filtre, ordene, adicione/remoça linhas e exporte CSV.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={addRow}
+              className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-white hover:bg-neutral-100 border"
+            >
+              <Plus className="h-4 w-4" /> Adicionar linha
+            </button>
+            <button
+              onClick={downloadCSV}
+              className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-white hover:bg-neutral-100 border"
+            >
+              <Download className="h-4 w-4" /> Exportar CSV
+            </button>
+          </div>
+        </header>
+
+        <div className="mb-3">
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filtrar por qualquer campo..."
+            className="w-full rounded-2xl border px-4 py-2 shadow-sm bg-white"
+          />
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+          <table className="w-full table-fixed">
+            <thead className="bg-neutral-100">
+              <tr>
+                <HeaderCell label="5W2H" k="eixo" />
+                <HeaderCell label="Descrição" k="descricao" />
+                <HeaderCell label="Responsável" k="responsavel" />
+                <HeaderCell label="Prazo" k="prazo" />
+                <HeaderCell label="Custo" k="custo" />
+                <HeaderCell label="Status" k="status" />
+                <th className="px-4 py-3 text-sm font-semibold">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row, i) => (
+                <tr key={i} className="border-t hover:bg-neutral-50">
+                  <td className="p-3 align-top">
+                    <input
+                      value={row.eixo}
+                      onChange={(e) => updateCell(i, "eixo", e.target.value)}
+                      className="w-full rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top w-[40%]">
+                    <textarea
+                      value={row.descricao}
+                      onChange={(e) => updateCell(i, "descricao", e.target.value)}
+                      className="w-full min-h-[64px] rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top">
+                    <input
+                      value={row.responsavel}
+                      onChange={(e) => updateCell(i, "responsavel", e.target.value)}
+                      className="w-full rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top">
+                    <input
+                      value={row.prazo}
+                      onChange={(e) => updateCell(i, "prazo", e.target.value)}
+                      className="w-full rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top">
+                    <input
+                      value={row.custo}
+                      onChange={(e) => updateCell(i, "custo", e.target.value)}
+                      className="w-full rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top">
+                    <input
+                      value={row.status}
+                      onChange={(e) => updateCell(i, "status", e.target.value)}
+                      className="w-full rounded-xl border px-3 py-2"
+                    />
+                  </td>
+                  <td className="p-3 align-top">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => deleteRow(i)}
+                        className="inline-flex items-center gap-1 rounded-xl px-3 py-2 border hover:bg-neutral-100"
+                        title="Excluir linha"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-neutral-500">
+                    Nenhum item encontrado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="mt-4 text-xs text-neutral-500">
+          Dica: clique no cabeçalho para ordenar. Use Exportar CSV para abrir a planilha no Excel/Google Sheets.
+        </footer>
+      </div>
+    </div>
+  );
+}
